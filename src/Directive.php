@@ -10,7 +10,7 @@ class Directive
         $class = __CLASS__;
 
         Loader::sage('blade')->compiler()->directive('includePart', function ($expression) use ($class) {
-            return "<?php ${$class}::includePart({$expression}) ?>";
+            return "<?= {$class}::includePart({$expression}) ?>";
         });
     }
 
@@ -28,7 +28,7 @@ class Directive
         if ($controller) {
             $data = $loader->initController($controller, $data);
         }
-            
+
         return Loader::template($template, $data);
     }
 
