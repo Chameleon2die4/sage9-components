@@ -24,13 +24,12 @@ class Directive
     {
         $loader = new Loader();
         $controller = $loader->getController($template);
+
         if ($controller) {
             $data = $loader->initController($controller, $data);
-
-            return Loader::template($template, $data);
-        } else {
-            return Loader::template($template, $data);
         }
+            
+        return Loader::template($template, $data);
     }
 
 }
