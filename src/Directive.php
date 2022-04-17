@@ -25,7 +25,7 @@ class Directive
         $loader = new Loader();
         $controller = $loader->getController($template);
         if ($controller) {
-            $loader->initController($controller);
+            $data = $loader->initController($controller, $data);
 
             return Loader::template($template, $data);
         } else {
