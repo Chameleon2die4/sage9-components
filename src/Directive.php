@@ -10,7 +10,7 @@ class Directive
         $class = __CLASS__;
 
         Loader::sage('blade')->compiler()->directive('includePart', function ($expression) use ($class) {
-            echo "<?php ${$class}::includePart({$expression}) ?>";
+            return "<?php ${$class}::includePart({$expression}) ?>";
         });
     }
 
@@ -20,7 +20,7 @@ class Directive
      * @param array $data
      * @return string
      */
-    public static function includePart(string $template, array $data)
+    public static function includePart(string $template, array $data = [])
     {
         $loader = new Loader();
         $controller = $loader->getController($template);

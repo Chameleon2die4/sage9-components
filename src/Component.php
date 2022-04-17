@@ -1,14 +1,18 @@
-<?php
+<?php /** @noinspection PhpUnused */
+/** @noinspection PhpPrivateFieldCanBeLocalVariableInspection */
+
+/** @noinspection PhpPropertyOnlyWrittenInspection */
 
 namespace Chameleon2die4\Components;
 
-//use Sober\Controller\Utils;
+use ReflectionClass;
+use ReflectionMethod;
 
-class Controller
+class Component
 {
     // Config
     protected $active = true;
-    protected $template = false;
+    protected $template = '';
     protected $tree = false;
     protected $acf = false;
     protected $post = false;
@@ -52,7 +56,7 @@ class Controller
     final public function __setParams()
     {
         // $this->class
-        $this->class = new \ReflectionClass($this);
+        $this->class = new ReflectionClass($this);
 
         // $this->classAcf
 //        if (class_exists('Acf')) {
@@ -74,9 +78,9 @@ class Controller
      * Set Controller Data
      *
      * Set the Controller raw data for this Controller
-     * @return Controller
+     * @return Component
      */
-    final public function __setData($incomingData)
+    final public function __setData($incomingData = [])
     {
 //        $this->incomingData = $incomingData;
 
@@ -133,7 +137,7 @@ class Controller
      *
      * Set the Advanced Custom Fields data automatically
      */
-    final private function __setDatafromModuleAcf()
+    final private function __setDataFromModuleAcf()
     {
         // If $this->acf is not set then return
         if (!$this->acf) {
@@ -148,7 +152,7 @@ class Controller
             $this->classAcf->setDataOptionsPage();
         }
 
-        // Deterime if acf/array filter is enabled and return correct format
+        // Determine if acf/array filter is enabled and return correct format
         $this->classAcf->setDataReturnFormat();
 
         // If there is no data return
@@ -181,9 +185,9 @@ class Controller
     final private function __setDataFromMethods()
     {
         // Get all public methods from class
-        $this->methods = $this->class->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $this->methods = $this->class->getMethods(ReflectionMethod::IS_PUBLIC);
 
-        // Remove __contruct, __init, __finalize and this class methods from $this->methods
+        // Remove __construct, __init, __finalize and this class methods from $this->methods
         $this->methods = array_filter($this->methods, function ($method) {
             return
               $method->class !== 'Sober\Controller\Controller' &&
@@ -193,14 +197,14 @@ class Controller
         });
 
         // Get all public static methods from class
-        $this->staticMethods = $this->class->getMethods(\ReflectionMethod::IS_STATIC);
+        $this->staticMethods = $this->class->getMethods(ReflectionMethod::IS_STATIC);
 
         // Remove $this->staticMethods from $this->methods using array_diff
         $this->dataMethods = array_diff($this->methods, $this->staticMethods);
 
         // Filter the remaining data methods
-        $this->dataMethods = array_filter($this->dataMethods, function ($method) {
-            return $method = $method->name;
+        $this->dataMethods = array_filter($this->dataMethods, function($method) {
+            return strpos($method->name, '__') !== 0;
         });
 
         // For each method convert method name to snake case and add to data[key => value]

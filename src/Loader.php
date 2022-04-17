@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
 
 namespace Chameleon2die4\Components;
 
@@ -7,16 +7,7 @@ use Roots\Sage\Template\Blade;
 
 class Loader
 {
-    // Dep
-//    private $hierarchy;
-
-    // User
-    private static $namespace = 'App\Controllers\Components';
-//    private $path;
-
-    // Internal
-//    private $listOfFiles;
-//    private $classesToRun = [];
+    private static $namespace = 'Controllers\Components';
 
     public function __construct()
     {
@@ -32,49 +23,35 @@ class Loader
     protected function setNamespace()
     {
         self::$namespace =
-          (has_filter('sober/controller/components/namespace')
-            ? apply_filters('sober/controller/components/namespace', rtrim(self::$namespace))
+          (has_filter('sober/components/namespace')
+            ? apply_filters('sober/components/namespace', rtrim(self::$namespace))
             : self::$namespace);
     }
 
-//    /**
-//     * Set Path
-//     *
-//     * Set the path assuming PSR4 autoloading from $this->namespace
-//     */
-//    protected function setPath()
-//    {
-//        $reflection = new \ReflectionClass(self::$namespace .'\App');
-//        $this->path = dirname($reflection->getFileName());
-//    }
-
-
-//
-//    /**
-//     * Set File List
-//     *
-//     * Recursively get file list and place into array
-//     */
-//    protected function setListOfFiles()
-//    {
-//        $this->listOfFiles = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->path));
-//    }
-
     public function getController(string $template)
     {
-        $exp = explode('.', $template);
+        $exp = preg_split('/[.\/]/', $template);
         $name = array_pop($exp);
         $namespace = self::$namespace;
 
         $cname = Utils::convertToPascalCase($name);
-        if (class_exists("{$namespace}\{$cname}")) {
-            return $cname;
+        $controller = "{$namespace}\\{$cname}";
+        if (class_exists($controller)) {
+            return $controller;
         } else {
             return null;
         }
     }
 
-    public function initController(string $class)
+    /**
+     * It creates a controller, runs the lifecycle methods, and returns the data
+     *
+     * @param string class The controller class name
+     * @param array data The data that will be passed to the controller.
+     *
+     * @return array The data that is being returned is the data that is being passed into the controller.
+     */
+    public function initController(string $class, array $data = [])
     {
         // Use the Sage DI container
         $container = self::sage();
@@ -85,40 +62,76 @@ class Loader
         // Set the params required for template param
         $controller->__setParams();
 
+        // Lifecycle before
+        $controller->__before();
+
+        // Data
+        $controller->__setData($data);
+
+        // Lifecycle after
+        $controller->__after();
+
+        // Return
+        $data = $controller->__getData();
+
         // Determine template location to expose data
-        $location = "sage/template/{$controller->__getTemplateParam()}-data/data";
+//        $location = "sage/template/{$controller->__getTemplateParam()}-data/data";
 
         // Pass data to filter
-        add_filter($location, function ($data) use ($container, $class) {
-            // Recreate the class so that $post is included
-            $controller = $container->make($class);
+//        add_filter($location, function ($data) use ($container, $class) {
+//            // Recreate the class so that $post is included
+//            $controller = $container->make($class);
+//
+//            // Params
+//            $controller->__setParams();
+//
+//            // Lifecycle
+//            $controller->__before();
+//
+//            // Data
+//            $controller->__setData($data);
+//
+//            // Lifecycle
+//            $controller->__after();
+//
+//            // Return
+//            return $controller->__getData();
+//        }, 10, 2);
 
-            // Params
-            $controller->__setParams();
 
-            // Lifecycle
-            $controller->__before();
+        $templateData = collect(get_body_class())->reduce(function ($data, $class) {
+            return apply_filters("sage/template/{$class}/data", $data);
+        }, []);
 
-            // Data
-            $controller->__setData($data);
-
-            // Lifecycle
-            $controller->__after();
-
-            // Return
-            return $controller->__getData();
-        }, 10, 2);
+        return array_merge($templateData, $data);
     }
 
+
+    /**
+     * Add a body class to the page based on the template name
+     *
+     * @param string template The name of the template file.
+     *
+     * @return void The body class is being returned.
+     *
+     * @noinspection PhpUnused
+     */
+    public function addBodyClass( string $template ) {
+        $location = "sage/template/{$template}-data/data";
+
+        add_filter('body_class', function ($body) use ($location) {
+            $body[] = $location;
+
+            return $body;
+        }, 12);
+    }
 
     /**
      * @return Blade;
      */
     public static function blade()
     {
-        $container = Container::getInstance();
-
-        return $container->makeWith('blade');
+        return self::sage('blade');
     }
 
     /**
