@@ -82,7 +82,7 @@ class Component
      */
     final public function __setData($incomingData = [])
     {
-//        $this->incomingData = $incomingData;
+        $this->incomingData = $incomingData;
 
         // Set the data from the WordPress post if singular to $this->data
 //        $this->__setDataFromPost();
@@ -90,8 +90,8 @@ class Component
         // Set the data from Advanced Custom Fields to $this->data
 //        $this->__setDataFromModuleAcf();
 
-        // Set incoming filter data from Sage to App before Debugger
-//        $this->__setDataFromFilter();
+        // Set incoming filter data from blade
+        $this->__setDataFromFilter();
 
         // Set the public methods from the class to $this->methods
         $this->__setDataFromMethods();
@@ -171,10 +171,8 @@ class Component
      */
     final private function __setDataFromFilter()
     {
-        if ($this->template === 'app') {
-            // Merge all incoming data from app to allow Sage add_filter support
-            $this->data = array_merge($this->data, $this->incomingData);
-        }
+        // Merge all incoming data from app to allow Sage add_filter support
+        $this->data = array_merge($this->data, $this->incomingData);
     }
 
     /**
@@ -203,7 +201,7 @@ class Component
         $this->dataMethods = array_diff($this->methods, $this->staticMethods);
 
         // Filter the remaining data methods
-        $this->dataMethods = array_filter($this->dataMethods, function($method) {
+        $this->dataMethods = array_filter($this->dataMethods, function ($method) {
             return strpos($method->name, '__') !== 0;
         });
 
@@ -236,22 +234,22 @@ class Component
             $returned = $debuggerData[$key];
 
             // Recreate the key with the method included
-            $debuggerData[$key] = (object) [
-              'method' => $dataMethod,
+            $debuggerData[$key] = (object)[
+              'method'   => $dataMethod,
               'returned' => $returned
             ];
         }
 
         // Create the final debugger object
-        $debugger = (object) [
-          'class' => $this->class->getShortName(),
-          'tree' => $this->tree,
+        $debugger = (object)[
+          'class'   => $this->class->getShortName(),
+          'tree'    => $this->tree,
           'methods' => $this->staticMethods,
-          'data' => $debuggerData
+          'data'    => $debuggerData
         ];
 
         // Include current debugger data in existing debugger array
-        $this->incomingData['__blade'][] =  $debugger;
+        $this->incomingData['__blade'][] = $debugger;
 
         // Set the updated array to $this->data for @debug use
         $this->data['__blade'] = $this->incomingData['__blade'];
